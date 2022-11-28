@@ -3,11 +3,11 @@
 
 #### Background
 
-In my city, I use a public bike service. Bikes are docked at established locations throughout the city - about every four or so blocks, there is a dock capable of holding around 20 bikes. Demand for bikes fluctuates throughout the day and week as workers ride from the outside of the city to the financial district, and as shoppers ride to parks and coffee shops on the weekends. This leads to certain docks becoming full of bikes, and others being ghosted.
+In my city, I use a public bike service. Bikes are docked at established stations throughout the city - about every four or so blocks, there is a station capable of docking around 20 bikes. Demand for bikes fluctuates throughout the day and week as workers ride from the outside of the city to the financial district, and as shoppers ride to parks and coffee shops on the weekends. This leads to certain stations becoming full of bikes, and others being ghosted.
 
-The public bike service that I use incentivises riders to return bikes from overused docks to underused docks by offering bike points. These points can be accumulated over time and are converted into real value once certain point thresholds are met. Sometimes the number of points offerd is 1, sometimes it is 2. The more points offered, the more incentive riders would have to move the bikes from overused docks to underused docks.
+To reduce certain stations being overused, the public bike service that I use incentivises riders to return bikes from overused stations to underused stations by offering membership points. These points can be accumulated over time and are converted into real value once certain point thresholds are met. Sometimes the number of points offerd for returning the bike to a particular station is 1, sometimes it is 2. The more points offered, the more incentive riders would have to move the bikes from overused stations to underused stations.
 
-I was curious as to how the number of point offered is determined in the app, and how docks which attract bonus points are selected. I wondered whether a self-calibrating algorithm would be capable of increasing or decreasing the number of bonus points offered in order to maximise the reallocation of bikes, but which 
+I was curious as to how the number of point offered is determined in the app, and how stations attracting bonus points are selected. I wondered whether a self-calibrating algorithm would be capable of increasing or decreasing the number of bonus points offered in order to maximise the reallocation of bikes, and which minimised the cost to the bike company.
 
 
 #### Thought Process
