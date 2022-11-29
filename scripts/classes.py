@@ -4,24 +4,73 @@ import math
 import networkx as nx
 import matplotlib.pyplot as plt
 
-class Station():
-    n_stations = 0
-    all_stations = []
 
+class Intersection():
+    all_intersections = []
+
+    def __init__(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
+        self.adjacent_intersections = []
+        Intersection.all_intersections.append(self)
+        self.intersection_id = len(Intersection.all_intersections)
+
+    def add_adjacent_intersection(self, adjacent_intersection):
+        self.adjacent_intersections.append(adjacent_intersection)
+        adjacent_intersection.adjacent_intersections.append(self)
+
+    @staticmethod
+    def get_distance_between_intersections(first_intersection, second_intersection):
+        return math.sqrt((first_intersection.lat - second_intersection.lat)**2 + (first_intersection.lon - second_intersection.lon)**2)
+
+    @staticmethod
+    def get_graph_of_intersections():
+        the_graph = nx.Graph()
+        for intersection in Intersection.all_intersections:
+            the_graph.add_node(intersection.intersection_id, pos = (intersection.lat, intersection.lon))
+            for adjacent_intersection in intersection.adjacent_intersections:
+                the_graph.add_edge(intersection.intersection_id, adjacent_intersection.intersection_id, \
+                    weight = Intersection.get_distance_between_intersections(intersection, adjacent_intersection))
+
+        return the_graph
+
+    @staticmethod
+    def draw_graph_of_intersections(graph_of_stations = None):
+        if graph_of_stations is None:
+            graph_of_stations = Station.get_graph_of_stations()
+
+        pos = nx.get_node_attributes(graph_of_stations, 'pos')
+        
+        node_colours = ['blue' if intersection.__class__.__name__ == 'Station' else 'grey' for intersection in Intersection.all_intersections]
+        # Re-order the colours to match the order of their appearance in the graph
+        node_colours_reordered = [node_colours[i - 1] for i in pos.keys()]
+        
+        nx.draw(graph_of_stations, pos, node_color = node_colours_reordered, with_labels = True, font_weight = 'bold')
+        plt.show()
+
+    def get_intersection_as_str(self):
+        if len(self.adjacent_intersections) == 0:
+            adjacent_intersections_str = 'None'
+        else:
+            adjacent_intersections_str = '-'.join([str(adjacent_intersection.intersection_id) for adjacent_intersection in self.adjacent_intersections])
+
+        return 'intersection_id:' + str(self.intersection_id) + \
+            ' lat:' + str(self.lat) + \
+            ' lon:' + str(self.lon) + \
+            ' adjacent_intersections:' + adjacent_intersections_str
+
+    def __repr__(self):
+        return '\n' + self.get_intersection_as_str()
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class Station(Intersection):
     def __init__(self, n_docks, n_bikes_docked, lat, lon):
         self.__n_docks = n_docks
         self.__n_bikes_docked = n_bikes_docked
-        self.lat = lat
-        self.lon = lon
-
-        Station.all_stations.append(self)
-
-        self.station_id = len(Station.all_stations)
-        self.adjacent_stations = []
-
-    def add_adjacent_station(self, adjacent_station):
-        self.adjacent_stations.append(adjacent_station)
-        adjacent_station.adjacent_stations.append(self)
+        super().__init__(lat, lon)
 
     def does_have_free_docks(self):
         return self.__n_bikes_docked < self.__n_docks
@@ -36,42 +85,9 @@ class Station():
         self.__n_bikes_docked -= 1
 
     def __repr__(self):
-        if len(self.adjacent_stations) == 0:
-            adjacent_stations_str = 'None'
-        else:
-            adjacent_stations_str = ', '.join([str(adjacent_station.station_id) for adjacent_station in self.adjacent_stations])
-
-        return 'n_docks: ' + str(self.__n_docks) + \
-            ', n_bikes_docked: ' + str(self.__n_bikes_docked) + \
-            ', lat: ' + str(self.lat) + \
-            ', lon: ' + str(self.lon) + \
-            ', adjacent_stations: ' + adjacent_stations_str
-
-    def __str__(self):
-        return self.__repr__()
-
-    @staticmethod
-    def get_distance_between_stations(first_station, second_station):
-        return math.sqrt((first_station.lat - second_station.lat)**2 + (first_station.lon - second_station.lon)**2)
-
-    @staticmethod
-    def get_graph_of_stations():
-        the_graph = nx.Graph()
-        for station in Station.all_stations:
-            the_graph.add_node(station.station_id, pos = (station.lat, station.lon))
-            for adjacent_station in station.adjacent_stations:
-                the_graph.add_edge(station.station_id, adjacent_station.station_id, weight = Station.get_distance_between_stations(station, adjacent_station))
-
-        return the_graph
-
-    @staticmethod
-    def draw_graph_of_stations(graph_of_stations = None):
-        if graph_of_stations is None:
-            graph_of_stations = Station.get_graph_of_stations()
-
-        pos = nx.get_node_attributes(graph_of_stations, 'pos')
-        nx.draw(graph_of_stations, pos, with_labels = True, font_weight = 'bold')
-        plt.show()
+        return '\n' + super().get_intersection_as_str() + \
+                ' n_docks:' + str(self.__n_docks) + \
+                ' n_bikes_docked:' + str(self.__n_bikes_docked)
 
 
 class Rider():
