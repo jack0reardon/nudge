@@ -9,6 +9,16 @@ def get_cost_of_travelling_between_stations(graph_of_stations, start_station, en
     return cost
 
 def get_best_path(graph_of_stations, start_station, end_station, explored_stations = None):
+    # First - find the fastest route
+
+    # Second - target any other station that offers a reward (either starting or ending there)
+    # No need to target stations that don't offer a reward since they would be longer routes and therefore less appealing
+    # No need to target stations that cost more to get to than they reward, since it would be preferable for the Rider
+    # to just take a bike from a non-bonus station and dock it at Work (or dock it at a )
+    
+    # Third - could terminate once the Rider docks their bike, and assume that the Rider walks the rest of the trip to Work
+    # OR could just recursively apply the 
+     
     if not start_station.does_have_free_bike():
         # Propose an alternative start station
         latest_explored_stations = explored_stations.append(start_station)

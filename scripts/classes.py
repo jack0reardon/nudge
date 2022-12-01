@@ -41,7 +41,7 @@ class Intersection():
 
         pos = nx.get_node_attributes(graph_of_stations, 'pos')
         
-        node_colours = ['blue' if intersection.__class__.__name__ == 'Station' else 'grey' for intersection in Intersection.all_intersections]
+        node_colours = ['pink' if intersection.__class__.__name__ == 'Station' else 'grey' for intersection in Intersection.all_intersections]
         # Re-order the colours to match the order of their appearance in the graph
         node_colours_reordered = [node_colours[i - 1] for i in pos.keys()]
         
