@@ -1,25 +1,39 @@
 # nudge
-### An algorithm which proposes how much to award people in an economy in order to optimise behaviour
+## A simulation of riders in a bike sharing program. Aim is to determine the optimum number of points to award each rider for moving bikes to or from under and overused stations.
+
 
 #### Background
 
-In my city, I use a public bike service. Bikes are docked at established stations throughout the city - about every four or so blocks, there is a station capable of docking around 20 bikes. Demand for bikes fluctuates throughout the day and week as workers ride from the outside of the city to the financial district, and as shoppers ride to parks and coffee shops on the weekends. This leads to certain stations becoming full of bikes, and others being ghosted.
+In my city, I use a public bike service. Bikes are docked at established stations throughout the city - about every four blocks or so, there is a station able to dockaround 20 bikes. Demand for bikes fluctuates throughout the day and week as workers ride from the outside of the city to the financial district, and as shoppers ride to parks and coffee shops on the weekends. This leads to certain stations being over and underused throughout the day.
 
-To reduce certain stations being overused, the public bike service that I use incentivises riders to return bikes from overused stations to underused stations by offering membership points. These points can be accumulated over time and are converted into real value once certain point thresholds are met. Sometimes the number of points offerd for returning the bike to a particular station is 1, sometimes it is 2. The more points offered, the more incentive riders would have to move the bikes from overused stations to underused stations.
+To reduce certain stations being overused, riders are incentivies to return bikes from overused stations to underused stations by offering bonus membership points. These points can be accumulated over time and can be converted into real value once certain point thresholds are met. Sometimes the number of points offerd for returning the bike to a particular station is 1, sometimes it is 2. The more points offered, the more incentive riders have to move the bikes from overused stations to underused stations.
 
-I was curious as to how the number of point offered is determined in the app, and how stations attracting bonus points are selected. I wondered whether a self-calibrating algorithm would be capable of increasing or decreasing the number of bonus points offered in order to maximise the reallocation of bikes, and which minimised the cost to the bike company.
+I was curious as to how the number of points offered to riders is determined in the app, and how stations attracting bonus points are selected. I wondered whether a self-calibrating algorithm would be able to increase or decrease the number of bonus points offered in order to maximise the reallocation of bikes, and which minimised the cost to the bike company.
 
 
-#### Thought Process
+#### Design
 
-- *AI Game Simulations:* I'm reminded of a demonstration that my computer science lecturer showed us once. It was a simple computer game - a player moving up, down, left, or right in a small grid. Their goal was to reach the exit gate in the shortest time. They should avoid landing on the square with the teleporter, since that would teleport them further away from the exit gate. But only the Architect knows this, the AI player is blind, and has no idea of the reward of the exit gate or the effects of the teleporter. The lecturer then shows that we can simply let the player walk randomly through the grid to see the effect. Each trip through the grid ends when they reach the exit gate, and with each trip, the player knows how long it took them to reach the end (there is a length to the trip), and each square in the grid can be assigned a cost. The cost of a square increases each time the route that uses that square is long, and the cost reduces each time the route is short. After one thousand walks, the player learns the shortest path through the grid - the one which avoids the teleporter, beelining for the exit gate.
+The program is of two parts:
+- **The World:** Classes were created to represent the Riders, Stations, and Intersections of the real world. Methods were created to determine how a Rider might choose a route through this world - they would probably just choose the shortest route, but the rider might be encouraged to take an alternate route if the number of bonus points up for grabs is appealing.
+- **The Experiment:** Given the world, the company that runs the bike sharing service must decide how many points to offer for drop off or pick up of bikes at their stations. This is the experiment:
+  1. Propose a number of bonus points at each station to be awarded for drop off or pick up
+  2. See how Riders react to the bonus points when the head to work and go back home each day - does it lead to congestion?
+  3. Increase or decrease the number of bonus points on offer at each station to discourage congestion
+  
 
-  There are two aspects of this example which are relevant to the current: 1) How the 'cost' of each square is updated, and 2) That simulations are run in order to determine the optimal cost of each square.
- 
-- **The [Beta Distribution](https://en.wikipedia.org/wiki/Beta_distribution):** This distribution can be interpreted as being a way to estimate the a probability or a rate. Suppose we want to estimate the likelihood of encountering a rotten egg. We start by cracking one - it's not rotten. With this one data point, our best estimate of the probability of encountering a rotten egg is 0%. We crack another one - it's also not rotten. With these two data points, it's still a best estimate of 0% likelihood of ecountering a rotten egg, but this estimate is bolstered by two data points. Eventually, after nine normal eggs, we crack a rotten egg. The new best estimate is now 10%. The mean of the Beta Distribution reflects this idea (it the number of positive encounters divided by the total number of encounters).
+### Differences With Existing Graph Search Problems
 
-  The Beta Distribution provides some variance around this estimate - we've cracked just 10 eggs after all, and the true underlying likelihood of encountering a rotten egg is most probably not 10%! The variance should reduce (the beta distribution should become pointier) as more and more eggs are cracked - the more eggs we crack, the more evidence we have pointing towards an estimate of the true underlying likelihood.
+Existing shortest-path algorithms (such as Dijkstra's) do not work in this program. This is because the cost to a Rider to traverse the graph of Stations is dependent on whether they are on a bike or whether they are on foot. Not all Stations in the network will have bikes or docks available, meaning the Rider must walk around a bit before finding a bike and getting on their way. The Rider may elect to walk in the opposite direction to their target destination if it means that they can get on a bike sooner.
 
-  This is of course the same idea as formulated by Beysian inference, but the example above and the reference to a concrete distrubution with variance I think is more useful than focussing just on the best estimate!
+Additionally, bonus points have the potential encourage strange routing behaviour by Riders. Imagine an absurd World in which there are four stations arranged in a square: A, B, C, D. You are at A and wish to get to the opposite station, C. The shortest route is to ride directly to C. The longest route is to walk from A to B, take a bike from B to D and then walk from D to C. However, if the bike ride from B to D attracts a number of points for pick up and drop off, then the Rider may well choose this longer route over the shortest route (A to C directly).
 
-- **Pre-Existing Algorithms:** An algorithm of this kind must already exist (eg. in Operations Research), but I restrained from researching whether there was one initially so that I could immerse myself into the problem fully before relying on someone else's solution. 
+
+### Method of Proposing Number of Bonus Points
+
+A *Poisson distribution* of bonus points is modelled rather than a single estimate of bonus points:
+1. Initially, all stations are assumed to offer an average of 1 bonus point for drop off and pick up. This doesn't meant that all stations offer 1 point exactly. Instead, at the very start of The Experiment, the number of points offered is sampled from a Poisson distribution of mean 1 - some stations will offer zero points, some will offer 1 or more.
+2. Once all Riders have travelled to work, check the state of each Station: Penalise the station for issuing bonus points to Riders and reward the Station for achieving a balanced number of bikes finally docked there (aiming for 50% usage rate at each Station). A *Value* heuristic is calculated for each Station, combining these characteristices into a quantifiable number.
+3. The change in the value of the Station in each simualtion feeds into the mean of the Poisson distribution using the following formula: $$\texttt{revisedMean} = \texttt{max}(0, ((\texttt{nSimulations} - 1) * \texttt{priorMean} + \texttt{changeInValue} * \texttt{learningRate}) / \texttt{nSimulations})$$
+4. The *revisedMean* is then adopted as the new mean of a Poisson distribution. Per step 1, this distribution is re-sampled to determine the new number of bonus points offered, and the simulation continues.
+
+This methodology will be improved over time.
