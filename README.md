@@ -2,7 +2,7 @@
 ## A simulation of riders in a bike sharing program. Aim is to determine the optimum number of points to award each rider for moving bikes to or from under and overused stations.
 
 
-#### Background
+### Background
 
 In my city, I use a public bike service. Bikes are docked at established stations throughout the city - about every four blocks or so, there is a station able to dockaround 20 bikes. Demand for bikes fluctuates throughout the day and week as workers ride from the outside of the city to the financial district, and as shoppers ride to parks and coffee shops on the weekends. This leads to certain stations being over and underused throughout the day.
 
