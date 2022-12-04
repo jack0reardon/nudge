@@ -11,7 +11,7 @@ To reduce certain stations being overused, riders are incentivies to return bike
 I was curious as to how the number of points offered to riders is determined in the app, and how stations attracting bonus points are selected. I wondered whether a self-calibrating algorithm would be able to increase or decrease the number of bonus points offered in order to maximise the reallocation of bikes, and which minimised the cost to the bike company.
 
 
-#### Design
+### Design
 
 The program is of two parts:
 - **The World:** Classes were created to represent the Riders, Stations, and Intersections of the real world. Methods were created to determine how a Rider might choose a route through this world - they would probably just choose the shortest route, but the rider might be encouraged to take an alternate route if the number of bonus points up for grabs is appealing.
