@@ -70,7 +70,7 @@ def get_fastest_route(graph_of_intersections, start_intersection, end_intersecti
         
         if fastest_route is None:
             # No path is better - just walk!
-            time = get_time_to_travel_between_intersections(graph_of_intersections, start_intersection, end_intersection, scripts.SPEED_OF_WALKING_KMPH)
+            time = get_time_to_travel_between_intersections(graph_of_intersections, start_intersection.intersection_id, end_intersection.intersection_id, scripts.SPEED_OF_WALKING_KMPH)
             return classes.Route(start_intersection, end_intersection, end_intersection, end_intersection, time)
         else:
             return fastest_route

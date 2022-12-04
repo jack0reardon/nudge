@@ -3,6 +3,7 @@ import scripts.functions as funs
 import math
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy.random as rnd
 
 
 class Intersection():
@@ -63,6 +64,28 @@ class Intersection():
         nx.draw(graph_of_stations, pos, node_color = node_colours_reordered, with_labels = True, font_weight = 'bold')
         plt.show()
 
+    @staticmethod
+    def update_prior_mean_bonus_points_for_each_station(n_simulations, update_poisson_mean_function):
+        for intersection in Intersection.all_intersections:
+            if intersection.is_station:
+                drop_off_value_of_station = intersection.get_drop_off_value_of_station()
+                pick_up_value_of_station = intersection.get_pick_up_value_of_station()
+                drop_off_value_of_station_change = intersection.drop_off_value_of_station - drop_off_value_of_station
+                pick_up_value_of_station_change = intersection.pick_up_value_of_station - pick_up_value_of_station
+
+                intersection.drop_off_bonus_points_mean = update_poisson_mean_function(n_simulations, \
+                    intersection.drop_off_bonus_points_mean, \
+                    drop_off_value_of_station_change, \
+                    scripts.LEARNING_RATE)
+                intersection.pick_up_bonus_points_mean = update_poisson_mean_function(n_simulations, \
+                    intersection.pick_up_bonus_points_mean, \
+                    pick_up_value_of_station_change, \
+                    scripts.LEARNING_RATE)
+
+                intersection.propose_drop_off_bonus_points()
+                intersection.propose_pick_up_bonus_points()
+
+
     def get_intersection_as_str(self):
         if len(self.adjacent_intersections) == 0:
             adjacent_intersections_str = 'None'
@@ -90,22 +113,31 @@ class Station(Intersection):
         self.__n_bikes_docked = n_bikes_docked
         super().__init__(lat, lon)
         self.is_station = True
+        
+        self.pick_up_bonus_points_mean = scripts.INITIAL_POISSON_MEAN_ASSUMPTION
+        self.drop_off_bonus_points_mean = scripts.INITIAL_POISSON_MEAN_ASSUMPTION
         self.pick_up_bonus_points = 0
         self.drop_off_bonus_points = 0
+        self.pick_up_bonus_points_issued = 0
+        self.drop_off_bonus_points_issued = 0
+        self.drop_off_value_of_station = self.get_drop_off_value_of_station()
+        self.pick_up_value_of_station = self.get_pick_up_value_of_station()
 
-    def set_pick_up_bonus_points(self, pick_up_bonus_points):
-        self.pick_up_bonus_points = pick_up_bonus_points
-        if pick_up_bonus_points > 0 and self not in Station.all_pick_up_bonus_stations:
-            Station.all_pick_up_bonus_stations.append(self)
-        elif pick_up_bonus_points == 0 and self in Station.all_pick_up_bonus_stations:
-            Station.all_pick_up_bonus_stations.remove(self)
-
-    def set_drop_off_bonus_points(self, drop_off_bonus_points):
-        self.drop_off_bonus_points = drop_off_bonus_points
-        if drop_off_bonus_points > 0 and self not in Station.all_drop_off_bonus_stations:
+    def propose_drop_off_bonus_points(self):
+        self.drop_off_bonus_points = rnd.poisson(self.drop_off_bonus_points_mean)
+        self.drop_off_bonus_points_issued = 0
+        if self.drop_off_bonus_points > 0 and self not in Station.all_drop_off_bonus_stations:
             Station.all_drop_off_bonus_stations.append(self)
-        elif drop_off_bonus_points == 0 and self in Station.all_drop_off_bonus_stations:
+        elif self.drop_off_bonus_points == 0 and self in Station.all_drop_off_bonus_stations:
             Station.all_drop_off_bonus_stations.remove(self)
+
+    def propose_pick_up_bonus_points(self):
+        self.pick_up_bonus_points = rnd.poisson(self.pick_up_bonus_points_mean)
+        self.pick_up_bonus_points_issued = 0
+        if self.pick_up_bonus_points > 0 and self not in Station.all_pick_up_bonus_stations:
+            Station.all_pick_up_bonus_stations.append(self)
+        elif self.pick_up_bonus_points == 0 and self in Station.all_pick_up_bonus_stations:
+            Station.all_pick_up_bonus_stations.remove(self)
 
     def does_have_free_docks(self):
         return self.__n_bikes_docked < self.__n_docks
@@ -115,9 +147,20 @@ class Station(Intersection):
 
     def dock_a_bike(self):
         self.__n_bikes_docked += 1
+        self.drop_off_bonus_points_issued += self.drop_off_bonus_points
     
     def rent_a_bike(self):
         self.__n_bikes_docked -= 1
+        self.pick_up_bonus_points_issued += self.pick_up_bonus_points
+
+    def get_usage_rate(self):
+        return scripts.USAGE_RATE_CALIBRATION_FACTOR * -(self.__n_bikes_docked / self.__n_docks - 0.5)**2
+
+    def get_drop_off_value_of_station(self):
+        return -self.drop_off_bonus_points_issued + self.get_usage_rate()
+
+    def get_pick_up_value_of_station(self):
+        return -self.pick_up_bonus_points_issued + self.get_usage_rate()
 
     def __repr__(self):
         return '\n' + super().get_intersection_as_str() + \
@@ -134,7 +177,7 @@ class Rider():
 
         Rider.all_riders.append(self)
 
-    def get_best_route_for_rider(self, to_work):
+    def get_best_route(self, to_work):
         if to_work:
             return funs.get_best_route(self.__home_station, self.__work_station)
         else:
@@ -185,7 +228,7 @@ class Route():
                 self.walk_from_intersection.drop_off_bonus_points
         else:
             drop_off_and_pick_up_bonus_points = 0
-        self.value_of_route = -self.time + drop_off_and_pick_up_bonus_points
+        self.value_of_route = -self.time + drop_off_and_pick_up_bonus_points * scripts.POINTS_INTRINSICT_VALUE
 
     def __repr__(self):
         return 'start_intersection:' + str(self.start_intersection.intersection_id) + \
